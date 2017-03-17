@@ -1,7 +1,7 @@
 var GOOGLE_API_KEY = "AIzaSyDX8qyzVvZRvoX1Z-x9xW2jUnK-JZ0tmt4";
 var GOOGLE_CLIENT_ID = "622829682947-006feir2itcmiu1fvmjdmrkimj7t6f60.apps.googleusercontent.com";
 var AWS_REGION = "ap-northeast-1";
-var AWS_IDENTITY_POOL_ID = "ap-northeast-1:92546c97-ab25-4623-a826-24e47c283502";
+var AWS_WEB_IDENTITY_ROLE_ARN = "arn:aws:iam::255384176336:role/google-oidc";
 
 window.onload = function() {
   gapi.load("client:auth2", function() {
@@ -42,11 +42,9 @@ function setCredentials() {
   var user = auth.currentUser.get();
   var token = user.getAuthResponse().id_token;
   AWS.config.region = AWS_REGION;
-  AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-    IdentityPoolId: AWS_IDENTITY_POOL_ID,
-    Logins: {
-      "accounts.google.com": token
-    }
+  AWS.config.credentials = new AWS.WebIdentityCredentials({
+    RoleArn: AWS_WEB_IDENTITY_ROLE_ARN,
+    WebIdentityToken: token
   });
 }
 
