@@ -8,11 +8,12 @@ window.onload = function() {
     gapi.client.init({
       apiKey: GOOGLE_API_KEY,
       clientId: GOOGLE_CLIENT_ID,
-      scope: "profile"
+      scope: "profile",
+      cookie_policy: "none"
     }).then(function () {
-      var auth = gapi.auth2.getAuthInstance();
-      auth.isSignedIn.listen(updateSigninStatus);
-      updateSigninStatus(auth.isSignedIn.get());
+      var currentUser = gapi.auth2.getAuthInstance().currentUser;
+      currentUser.listen(handleCurrentUserChange);
+      handleCurrentUserChange(currentUser.get());
     });
   });
   document.getElementById("signin").onclick = handleSignIn;
@@ -20,27 +21,26 @@ window.onload = function() {
 };
 
 function handleSignIn() {
-  gapi.auth2.getAuthInstance().signIn();
+  gapi.auth2.getAuthInstance().signIn({
+    prompt: "select_account"
+  });
 }
 
 function handleSignOut() {
   gapi.auth2.getAuthInstance().signOut();
-  var anchor = document.getElementById("signedurl");
-  anchor.setAttribute("href", "#");
-  anchor.removeChild(anchor.firstChild);
 }
 
-function updateSigninStatus(isSignedIn) {
-  if (isSignedIn) {
-    setCredentials();
+function handleCurrentUserChange(user) {
+  if (user.isSignedIn()) {
+    document.title = user.getBasicProfile().getEmail();
+    setCredentials(user.getAuthResponse().id_token);
     displaySignedUrl();
+  } else {
+    document.title = "Not Signed In";
   }
 }
 
-function setCredentials() {
-  var auth = gapi.auth2.getAuthInstance();
-  var user = auth.currentUser.get();
-  var token = user.getAuthResponse().id_token;
+function setCredentials(token) {
   AWS.config.region = AWS_REGION;
   AWS.config.credentials = new AWS.WebIdentityCredentials({
     RoleArn: AWS_WEB_IDENTITY_ROLE_ARN,
@@ -54,6 +54,7 @@ function displaySignedUrl() {
   getSignedUrl(parsed.bucket, parsed.key, function(signedUrl) {
     var anchor = document.getElementById("signedurl");
     anchor.setAttribute("href", signedUrl);
+    anchor.removeChild(anchor.firstChild);
     anchor.appendChild(document.createTextNode(url));
   });
 }
@@ -76,7 +77,7 @@ function getSignedUrl(bucket, key, callback) {
     Expires: 60
   }, function(err, url) {
     if (err) {
-      console.log(err);
+      alert(err);
     } else {
       callback(url);
     }
