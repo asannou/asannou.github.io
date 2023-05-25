@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <script>
       window.onload = () => {
-        document.getElementById("subscribe").setAttribute("href", "abp:subscribe" + location.search);
+        document.getElementById("subscribe").setAttribute("href", "abp:subscribe?" + location.hash.substring(1);
       };
     </script>
   </head>
